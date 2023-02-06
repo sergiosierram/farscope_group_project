@@ -5,3 +5,9 @@
 
 #YOLOV5 tutorial https://colab.research.google.com/drive/1gDZ2xcTOgR39tGGs-EZ6i3RTs16wmzZQ#scrollTo=wbvMlHd_QwMG
 
+#ideas for top and bottom corner locator
+https://universe.roboflow.com/ca-qhpdl/redring
+
+or a hough circle detector
+http://devdoc.net/python/scikit-image-doc-0.13.1/auto_examples/edges/plot_circular_elliptical_hough_transform.html
+
