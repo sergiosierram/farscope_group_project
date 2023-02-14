@@ -1,4 +1,4 @@
-# Farscope Industry Project
+# Farscope Group Project
 
 This repository keeps software and hardware stuff related to the Amazon Picking Challenge, as part of the work of the 2023 Farscope Industry Project. The project is developed by the 2022 cohort working in two sub-teams as follows:
 
