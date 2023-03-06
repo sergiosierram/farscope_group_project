@@ -1,0 +1,16 @@
+<launch>
+    <node name="goal_mux" pkg="arm_control" type="goal_mux.py" output="screen">
+	</node>
+
+    <node name="path_planner" pkg="arm_control" type="path_planner.py" output="screen">
+	</node>
+
+    <node name="path_translator" pkg="arm_control" type="path_translator.py" output="screen">
+	</node>
+
+    <node name="scan" pkg="arm_control" type="scan.py" output="screen">
+	</node>
+
+    <node name="system_manager" pkg="arm_control" type="system_manager.py" output="screen">
+	</node>
+</launch>
