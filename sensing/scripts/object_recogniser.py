@@ -30,7 +30,6 @@ class ObjectRecognition():
     def initSubscribers(self):
         rospy.Subscriber(self.image_topic, Image, self.callbackImage)
         rospy.Subscriber(self.do_topic, Bool, self.callbackDoRecognition)
-        rospy.Subscriber(self.force_new_topic, Bool, self.callbackForceNewImage)
         return
         
     def initPublishers(self):
@@ -70,10 +69,6 @@ class ObjectRecognition():
                 self.get_new_image = False
             except:
                 print("Error getting image")
-        return
-        
-    def callbackForceNewImage(self, msg):
-        self.get_new_image = msg.data
         return
 
     def callbackDoRecognition(self, msg):
