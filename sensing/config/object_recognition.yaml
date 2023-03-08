@@ -1,0 +1,41 @@
+image_topic: "/camera/color/image_raw"
+start_recognition_topic: "/start_recognition"
+force_new_topic: "/force_new_image"
+roboflow_info:
+    api_key: "jdOkPzYHJ2d3fxl3sO2H"
+    workspace: "manny"
+    project: "amazon_picking_challenge"
+    version: "3"
+image_file:
+    filename: "object.jpg"
+    path: "/home/sergiosierra/catkin_ws/scr/farscope_group_project/sensing/scripts/"
+verbose: false
+delete_file: false
+wait_for_request: false
+labels: 
+    Bin: 1
+    Crackers: 2
+    Crayons: 3
+    Cups: 4
+    Dovesoap: 5
+    Duck: 6
+    GreenToy: 7
+    JokesBook: 8
+    MarkTwainBook: 9
+    Markers: 10
+    MetalCup: 11
+    Netting: 12
+    OutletPlugs: 13
+    Pencils: 14
+    Plug: 15
+    QuickNotes: 16
+    Sketchers: 17
+    Soap: 18
+    SpareParts: 19
+    Squarenotes: 20
+    StickyNotes: 21
+    Straw: 22
+    Tools: 23
+    Treats: 24
+    YellowToy: 25
+    Brush: 26

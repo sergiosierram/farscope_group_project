@@ -8,6 +8,7 @@ class ObjectRecognition():
     def __init__(self, name):
         self.name = name
         rospy.init_node(self.name, anonymous = True)
+        rospy.loginfo("[%s] Starting node", self.name)
         self.initParameters()
         self.initSubscribers()
         self.initPublishers()
@@ -16,11 +17,20 @@ class ObjectRecognition():
         return
         
     def initParameters(self):
+        self.image_topic = rospy.get_param("~image_topic", "/camera/color/image_raw")
+        self.do_topic = rospy.get_param("~do_recognition_topic", "/do_recognition")
+        self.roboflow_info = rospy.get_param("~roboflow_info", {})
+        self.image_file = rospy.get_param("~image_file", {})
+        self.verbose = rospy.get_param("~verbose", False)
+        self.labels = rospy.get_param("~labels", {})
+        self.delete_file = rospy.get_param("~delete_file", False)
+        self.wait_for_request = rospy.get_param("~wait_for_request", False)
         return
         
     def initSubscribers(self):
-        rospy.Subscriber("/camera/color/image_raw", Image, self.callbackImage)
-        rospy.Subscriber("/force_new_image", Bool, self.callbackForceNewImage)
+        rospy.Subscriber(self.image_topic, Image, self.callbackImage)
+        rospy.Subscriber(self.do_topic, Bool, self.callbackDoRecognition)
+        rospy.Subscriber(self.force_new_topic, Bool, self.callbackForceNewImage)
         return
         
     def initPublishers(self):
@@ -30,11 +40,26 @@ class ObjectRecognition():
     def initVariables(self):
         self.image = Image()
         self.bridge = cv_bridge.CvBridge()
-        self.get_new_image = True
-        rf = roboflow.Roboflow(api_key="jdOkPzYHJ2d3fxl3sO2H")
-        project = rf.workspace("manny").project("amazon_picking_challenge")
-        self.model = project.version("3").model
+        if self.wait_for_request == False:
+            self.do_recognition = True
+        else: 
+            self.do_recognition = False
         self.rate = rospy.Rate(0.3)
+        # Roboflow stuff
+        if self.roboflow_info != {}:
+            rospy.loginfo("[%s] Loading roboflow info", self.name)
+            # Extract parameters from the dict loaded from the .yaml file
+            api = self.roboflow_info["api_key"]
+            workspace_name = self.roboflow_info["workspace"]
+            project_name = self.roboflow_info["project"]
+            version = self.roboflow_info["version"]
+            # Create roboflow objects and get model
+            rf = roboflow.Roboflow(api_key=api)
+            project = rf.workspace(workspace_name).project(project_name)
+            self.model = project.version(version).model
+        else:
+            rospy.logerr("[%s] Failed to load roboflow info", self.name)
+            self.model = None
         return
         
     def callbackImage(self, msg):
@@ -48,26 +73,32 @@ class ObjectRecognition():
         return
         
     def callbackForceNewImage(self, msg):
-        if msg.data == True:
-            self.get_new_image = True
+        self.get_new_image = msg.data
+        return
+
+    def callbackDoRecognition(self, msg):
+        self.do_recognition = msg.data
         return
         
+        
     def predict(self):
+        # Create filename to store the image
+        file = self.image_file["path"] + self.image_file["filename"]
+        
+        # Get prediction from roboflow
         prediction = self.model.predict("object.jpg") 
         
         # Convert predictions to JSON
         prediction.json()
         
-        print(prediction.json()) #display predictions
+        #display predictions
+        if self.verbose:
+            print(prediction.json()) 
         
         vals = dict(prediction.json())
         
-        labels = {"Bin": 1, "Crackers": 2,"Crayons": 3, "Cups": 4, "Dovesoap": 5, "Duck": 6, "GreenToy": 7,
-        "JokesBook": 8, "MarkTwainBook": 9, "Markers": 10, "MetalCup": 11, "Netting": 12, "OutletPlugs": 13,
-        "Pencils": 14, "Plug": 15, "QuickNotes": 16, "Sketchers": 17, "Soap": 18, "SpareParts": 19,
-        "Squarenotes": 20, "StickyNotes": 21, "Straw": 22, "Tools": 23, "Treats": 24, "YellowToy": 25, "Brush":26}
-
-        noOfItems = len(vals['predictions'])  #number of objects detected
+        #number of objects detected
+        noOfItems = len(vals['predictions'])  
         
         if(noOfItems == 0): #no object in the frame
           print("No items")
@@ -75,28 +106,32 @@ class ObjectRecognition():
           for i in range(noOfItems):
             objects = dict((vals['predictions'][i]) )
             objectName = objects['class']
-            objectID = labels[objectName]
+            if self.labels != {}
+                objectID = self.labels[objectName]
+            else:
+                ropsy.logwarn("[%s] Unknown object, using default id 0", self.name)
+                objectID = 0
             print(objectID, " ", objectName)
           
         #delete the captured image after inference
-        if os.path.exists("object.jpg"):
-            #os.remove("object.jpg") 
-            pass   
-            
-        self.get_new_image = True  
+        if os.path.exists(file) and self.delete_file:
+            os.remove(file)   
+           
+        if self.wait_for_request == True:
+            self.do_recognition = False
         return
         
     def main(self):
-        print("Here")
+        rospy.loginfo("[%s] Configuration done", self.name)
         while not rospy.is_shutdown():
-            if self.get_new_image == False:
+            if self.do_recognition == True:
                 self.predict()
             self.rate.sleep()
         return
         
 if __name__ == "__main__":
     try:
-        node = ObjectRecognition('ImageTaker')
+        node = ObjectRecognition('ObjectRecognizer')
     except rospy.ROSInterruptException:
         pass
         
