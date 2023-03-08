@@ -43,6 +43,7 @@ class ObjectRecognition():
             self.do_recognition = True
         else: 
             self.do_recognition = False
+        self.image_is_ready = False
         self.rate = rospy.Rate(0.3)
         # Roboflow stuff
         if self.roboflow_info != {}:
@@ -62,11 +63,11 @@ class ObjectRecognition():
         return
         
     def callbackImage(self, msg):
-        if self.get_new_image == True:
+        if self.image_is_ready == False:
             try:
                 img = self.bridge.imgmsg_to_cv2(msg, 'bgr8')
                 cv2.imwrite('object.jpg', img)
-                self.get_new_image = False
+                self.image_is_ready = True
             except:
                 print("Error getting image")
         return
@@ -110,7 +111,8 @@ class ObjectRecognition():
           
         #delete the captured image after inference
         if os.path.exists(file) and self.delete_file:
-            os.remove(file)   
+            os.remove(file)
+            self.image_is_ready = False   
            
         if self.wait_for_request == True:
             self.do_recognition = False
@@ -119,7 +121,7 @@ class ObjectRecognition():
     def main(self):
         rospy.loginfo("[%s] Configuration done", self.name)
         while not rospy.is_shutdown():
-            if self.do_recognition == True:
+            if self.do_recognition == True and self.image_is_ready == True:
                 self.predict()
             self.rate.sleep()
         return
