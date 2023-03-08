@@ -1,0 +1,8 @@
+<?xml version="1.0"?>
+<launch>
+
+  <node pkg ="sensing" type ="object_recogniser.py" name ="object_recogniser" output="screen">
+    <rosparam file="$(find sensing)/config/recognition_params.yaml" command="load" />
+  </node>
+
+</launch>

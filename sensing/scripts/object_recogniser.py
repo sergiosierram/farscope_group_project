@@ -106,7 +106,7 @@ class ObjectRecognition():
           for i in range(noOfItems):
             objects = dict((vals['predictions'][i]) )
             objectName = objects['class']
-            if self.labels != {}
+            if self.labels != {}:
                 objectID = self.labels[objectName]
             else:
                 ropsy.logwarn("[%s] Unknown object, using default id 0", self.name)
