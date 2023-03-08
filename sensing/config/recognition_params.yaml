@@ -1,6 +1,6 @@
 image_topic: "/camera/color/image_raw"
-start_recognition_topic: "/start_recognition"
-force_new_topic: "/force_new_image"
+do_recognition_topic: "/do_recognition"
+detected_object_topic: "/detected_objects"
 roboflow_info:
     api_key: "jdOkPzYHJ2d3fxl3sO2H"
     workspace: "manny"
@@ -8,10 +8,11 @@ roboflow_info:
     version: "3"
 image_file:
     filename: "object.jpg"
-    path: "/home/sergiosierra/catkin_ws/scr/farscope_group_project/sensing/scripts/"
+    path: "/home/sergiosierra/catkin_ws/src/farscope_group_project/sensing/scripts/"
 verbose: false
-delete_file: false
-wait_for_request: false
+delete_file: true
+wait_for_request: true
+rate: 1
 labels: 
     Bin: 1
     Crackers: 2

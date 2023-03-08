@@ -3,6 +3,7 @@ import rospy, cv2, cv_bridge, roboflow, os
 import numpy as np
 from sensor_msgs.msg import Image
 from std_msgs.msg import Bool
+from sensing_msgs.msg import Object, ObjectArray
 
 class ObjectRecognition():
     def __init__(self, name):
@@ -19,12 +20,14 @@ class ObjectRecognition():
     def initParameters(self):
         self.image_topic = rospy.get_param("~image_topic", "/camera/color/image_raw")
         self.do_topic = rospy.get_param("~do_recognition_topic", "/do_recognition")
+        self.object_topic = rospy.get_param("~detected_object_topic", "/detected_objects")
         self.roboflow_info = rospy.get_param("~roboflow_info", {})
         self.image_file = rospy.get_param("~image_file", {})
         self.verbose = rospy.get_param("~verbose", False)
         self.labels = rospy.get_param("~labels", {})
         self.delete_file = rospy.get_param("~delete_file", False)
         self.wait_for_request = rospy.get_param("~wait_for_request", False)
+        self.node_rate = rospy.get_param("~rate", 1)
         return
         
     def initSubscribers(self):
@@ -33,7 +36,7 @@ class ObjectRecognition():
         return
         
     def initPublishers(self):
-        self.pub_predict = rospy.Publisher("/predicting", Bool, queue_size = 10)
+        self.pub_objects = rospy.Publisher(self.object_topic, ObjectArray, queue_size = 10)
         return
         
     def initVariables(self):
@@ -44,7 +47,8 @@ class ObjectRecognition():
         else: 
             self.do_recognition = False
         self.image_is_ready = False
-        self.rate = rospy.Rate(0.3)
+        self.rate = rospy.Rate(self.node_rate)
+        
         # Roboflow stuff
         if self.roboflow_info != {}:
             rospy.loginfo("[%s] Loading roboflow info", self.name)
@@ -65,24 +69,29 @@ class ObjectRecognition():
     def callbackImage(self, msg):
         if self.image_is_ready == False:
             try:
+                # Create filename to get the image
+                file = self.image_file["path"] + self.image_file["filename"]
                 img = self.bridge.imgmsg_to_cv2(msg, 'bgr8')
-                cv2.imwrite('object.jpg', img)
+                cv2.imwrite(file, img)
                 self.image_is_ready = True
             except:
                 print("Error getting image")
         return
 
     def callbackDoRecognition(self, msg):
+        if msg.data:
+            rospy.loginfo("[%s] Recognition request received", self.name)
         self.do_recognition = msg.data
+        self.image_is_ready = False    
         return
         
         
     def predict(self):
-        # Create filename to store the image
+        # Create filename to get the image
         file = self.image_file["path"] + self.image_file["filename"]
         
         # Get prediction from roboflow
-        prediction = self.model.predict("object.jpg") 
+        prediction = self.model.predict(file) 
         
         # Convert predictions to JSON
         prediction.json()
@@ -97,22 +106,37 @@ class ObjectRecognition():
         noOfItems = len(vals['predictions'])  
         
         if(noOfItems == 0): #no object in the frame
-          print("No items")
+            print("No items")
+            self.pub_objects.publish([])
         else:
-          for i in range(noOfItems):
-            objects = dict((vals['predictions'][i]) )
-            objectName = objects['class']
-            if self.labels != {}:
-                objectID = self.labels[objectName]
-            else:
-                ropsy.logwarn("[%s] Unknown object, using default id 0", self.name)
-                objectID = 0
-            print(objectID, " ", objectName)
+            if self.verbose:
+                print("-"*30)
+            msg_list = []
+            for i in range(noOfItems):
+                objects = dict((vals['predictions'][i]) )
+                objectName = objects['class']
+                if self.labels != {}:
+                    objectID = self.labels[objectName]
+                else:
+                    ropsy.logwarn("[%s] Unknown object, using default id 0", self.name)
+                    objectID = 0
+                if self.verbose:
+                    print(objectID, " ", objectName)
+                msg = Object() 
+                msg.class_name = objectName
+                msg.x = objects['x']
+                msg.y = objects['y']
+                msg.width = objects['width']
+                msg.height = objects['height']
+                msg.confidence == objects['confidence']
+                msg_list.append(msg)
+            self.pub_objects.publish(msg_list)                
           
         #delete the captured image after inference
         if os.path.exists(file) and self.delete_file:
             os.remove(file)
-            self.image_is_ready = False   
+            
+        self.image_is_ready = False   
            
         if self.wait_for_request == True:
             self.do_recognition = False
@@ -128,7 +152,7 @@ class ObjectRecognition():
         
 if __name__ == "__main__":
     try:
-        node = ObjectRecognition('ObjectRecognizer')
+        node = ObjectRecognition('ObjectRecogniser')
     except rospy.ROSInterruptException:
         pass
         
