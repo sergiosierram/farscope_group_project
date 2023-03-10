@@ -7,7 +7,7 @@ from math import pi
 from std_msgs.msg import String
 from moveit_commander.conversions import pose_to_list
 
-from include import kinematics
+import kinematics
 import time
 import math
 

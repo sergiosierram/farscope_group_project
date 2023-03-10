@@ -1,9 +1,10 @@
-#!/usr/bin/python3
+#!/usr/bin/python
 import rospy, time, copy
 import sys, moveit_commander
 from moveit_msgs.msg import DisplayTrajectory
-from std_msgs.msg import Bool
+from std_msgs.msg import Bool, String
 from geometry_msgs.msg import Pose
+import kinematics
 
 class PosesDemo():
     def __init__(self, name):
@@ -26,12 +27,14 @@ class PosesDemo():
 
     def initSubscribers(self):
         rospy.loginfo("[%s] Initializing subscribers", self.name)
+        rospy.Subscriber("shelf/selector", String, self.callbackShelf)
         return
 
     def initPublishers(self):
         rospy.loginfo("[%s] Initializing publishers", self.name)
         # Moveit stuff
         self.display_trajectory_publisher = rospy.Publisher(self.trajectoy_topic, DisplayTrajectory, queue_size = 20)
+        self.ismoving_pub = rospy.Publisher('robot/isMoving', String, queue_size = 20)
         return
 
     def initVariables(self):
@@ -41,15 +44,14 @@ class PosesDemo():
         self.move_group = moveit_commander.MoveGroupCommander("manipulator")
         # Additional Vars
         self.joints = [
-                        [-1.2329629167348983, -0.15208868764668448, 0.2532445839785442, -0.17011216139049523, -1.605649292298132, 0.2799847649205507],
-                        [-1.3800811928996275, -0.1528705045266774, -0.1825779630070894, -0.03674920934942527, -1.6041657061125445, -0.15603929999081156],
-                        [-1.2247636568256333, -0.18211347003843592, -0.6376632056794413, -0.17542853615483978, -1.5964292498261727, -0.6111446261907423],
-                        [-1.2329629167348983, -0.15208868764668448, 0.2532445839785442, -0.17011216139049523, -1.605649292298132, 0.2799847649205507],
-                        [-1.3800811928996275, -0.1528705045266774, -0.1825779630070894, -0.03674920934942527, -1.6041657061125445, -0.15603929999081156],
-                        [-1.2247636568256333, -0.18211347003843592, -0.6376632056794413, -0.17542853615483978, -1.5964292498261727, -0.6111446261907423],
-                        [-1.2329629167348983, -0.15208868764668448, 0.2532445839785442, -0.17011216139049523, -1.605649292298132, 0.2799847649205507],
-                        [-1.3800811928996275, -0.1528705045266774, -0.1825779630070894, -0.03674920934942527, -1.6041657061125445, -0.15603929999081156],
-                        [-1.2247636568256333, -0.18211347003843592, -0.6376632056794413, -0.17542853615483978, -1.5964292498261727, -0.6111446261907423]]
+                        [5.414174556732178, -1.9323938528644007, -1.246256176625387, -0.01906282106508428, -0.5828827063189905, -3.0969911257373255],
+                        [5.096587657928467, -1.8935135046588343, -1.2884400526629847, -0.01879913011659795, -0.35438663164247686, -3.094884697590963],
+                        [4.806588649749756, -1.88788348833193, -1.2767422834979456, -0.03195697466005498, -0.1639636198626917, -3.095842425023214],
+                        [5.365898132324219, -2.1077006498919886, -1.569625202809469, 0.2727639675140381, -0.522898022328512, -2.9565418402301233],
+                        [5.115416526794434, -1.955104176198141, -1.7171972433673304, 0.2755308151245117, -0.31705934206117803, -2.956864658986227],
+                        [4.801599502563477, -1.957726780568258, -1.7058971563922327, 0.275051474571228, -0.10432798067201787, -2.956852738057272],
+                        [4.958446502685547, -2.379840675984518, -1.841811482106344, 0.38452887535095215, 0.08770018815994263, -2.4283233324633997],
+                        [4.976724624633789, -2.753434960042135, -1.824141804371969, 0.21251404285430908, 0.003852179506793618, -1.8834951559649866]]
         self.rate = rospy.Rate(self.rate_value)
         return
 
@@ -114,6 +116,8 @@ class PosesDemo():
         scale = 1.0
 
         wpose = self.move_group.get_current_pose().pose
+        print(wpose)
+        return
         #wpose.position.z -= scale * 0.1  # First move up (z)
         wpose.position.y += scale * 0.3  # and sideways (y)
         waypoints.append(copy.deepcopy(wpose))
@@ -182,18 +186,45 @@ class PosesDemo():
         # Note: We are just planning, not asking move_group to actually move the robot yet:
         return plan, fraction
 
+    def setJointPosWait(self, theta0, theta1,  theta2, theta3, theta4, theta5):
+        joint_goal = self.move_group.get_current_joint_values()
+        joint_goal[0] = theta0
+        joint_goal[1] = theta1
+        joint_goal[2] = theta2
+        joint_goal[3] = theta3
+        joint_goal[4] = theta4
+        joint_goal[5] = theta5
+        
+        is_at_pos = self.move_group.go(joint_goal, wait=True)
+        self.move_group.stop()
+        time.sleep(0.01)
+        return is_at_pos
+
+    def callbackShelf(self, msg):
+        print("received "+msg.data)
+        idx = int(msg.data)
+        pose = self.joints[idx]
+        print(pose)
+        self.ismoving_pub.publish("true")
+        result = self.setJointPosWait(pose[0], pose[1], pose[2], pose[3], pose[4], pose[5])
+        self.ismoving_pub.publish("false")
+        print(result)
+        return
+
     def mainControl(self):
         rospy.loginfo("[%s] Pose demonstrator OK", self.name)
         #self.planningToPose(1, 0.5, 0.5, 0.5 )
         #self.planningToPose(1, 0.5, -0.3, 1.0 )
         #time.sleep(3)
-        plan, fraction = self.cartesianPath()
-        self.move_group.execute(plan, wait=True)
-        time.sleep(15)
-        print("---------------------------------------------")
-        plan, fraction = self.cartesianPath2()
-        self.move_group.execute(plan, wait=True)
-        #while not rospy.is_shutdown():
+        #self.cartesianPath()
+        #self.mainControl()
+        #plan, fraction = self.cartesianPath()
+        #self.move_group.execute(plan, wait=True)
+        #time.sleep(15)
+        #print("---------------------------------------------")
+        #plan, fraction = self.cartesianPath2()
+        #self.move_group.execute(plan, wait=True)
+        while not rospy.is_shutdown():
         #    """ aux = self.joints[count]
         #    rospy.loginfo("[%s] Sending pose [%d]", self.name, count)
         #    self.planningToPose(aux[0], aux[1], aux[2], aux[3])
@@ -201,7 +232,7 @@ class PosesDemo():
         #    if count == len(self.joints):
         #        break """
         #    self.basicInfo()
-        #    self.rate.sleep()
+            self.rate.sleep()
 
 if __name__ == '__main__':
     try:
