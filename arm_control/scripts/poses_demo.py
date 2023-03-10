@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 import rospy, time, copy
 import sys, moveit_commander
 from moveit_msgs.msg import DisplayTrajectory

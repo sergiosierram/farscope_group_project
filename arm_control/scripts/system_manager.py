@@ -1,7 +1,7 @@
 #!/usr/bin/python
 import rospy, time
 from geometry_msgs.msg import Pose
-from std_msgs.msg import Bool
+from std_msgs.msg import Bool, String
 from sys import stdin
 
 class SystemManager(object):
@@ -25,7 +25,9 @@ class SystemManager(object):
         return
 
     def initSubscribers(self):
-        self.machine_vision_topic = rospy.Subscriber(self.machine_vision_topic, Pose, self.callbackMachineVision)
+        rospy.Subscriber(self.machine_vision_topic, Pose, self.callbackMachineVision)
+        rospy.Subscriber("robot/isMoving", String, self.callbackMoving)
+        rospy.Subscriber("robot/positions", Pose, self.callbackPosition)
         return
 
     def initPublishers(self):
@@ -33,20 +35,59 @@ class SystemManager(object):
         self.pub_output = rospy.Publisher(self.output_topic, Pose, queue_size = 10)
         self.pub_pause = rospy.Publisher(self.pause_topic, Bool, queue_size = 10)
         self.pub_emergency = rospy.Publisher(self.emergency_topic, Bool, queue_size = 10)
+        self.pub_shelf = rospy.Publisher('shelf/selector', String)
+        self.pub_pose  = rospy.Publisher('robot/positions', Pose)
         return
 
     def initVariables(self):
         self.rate = rospy.Rate(self.mux_rate)
+        self.isMoving = False
+        self.currentPose = Pose()
+        self.shelf_list = [1,3,8,12]
         return
 
 
     def callbackMachineVision(self, msg):
         return
 
+    def callbackMoving(self, msg):
+        print(msg.data)
+        if(str(msg.data )== "False"):
+            self.isMoving = False
+            print("Done")
+        else:
+            print("isMoving")
+            self.isMoving = True
+        return
+
+    def callbackPosition(self, pose):
+        self.currentPose = pose
+        return
+
+    def shelfTalker(self, shelf_num):
+        msg = String()
+        msg.data = str(shelf_num)
+
+        rospy.loginfo(msg)
+        self.pub_shelf.publish(msg)
+        return
+
+    def positionTalker(self, Pose):
+        self.pub_shelf.publish(Pose)
+        return
+
     def main(self):
         rospy.loginfo("[%s] Configuration OK", self.name)
         while not rospy.is_shutdown():
+            for i in range(len(self.shelf_list)):
+                self.shelfTalker(self.shelf_list[i])
+                time.sleep(0.01)
+                while(self.isMoving == True):
+                    pass
+                time.sleep(0.01)
+            print("Finished Shelf List")
             self.rate.sleep()
+        return
 
 if __name__ == '__main__':
     try:
