@@ -1,6 +1,7 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 import rospy, time
 from geometry_msgs.msg import Pose
+import json
 from std_msgs.msg import Bool, String
 from sys import stdin
 
@@ -43,7 +44,8 @@ class SystemManager(object):
         self.rate = rospy.Rate(self.mux_rate)
         self.isMoving = False
         self.currentPose = Pose()
-        self.shelf_list = [0,1,2,3,4,5,6,7]
+        self.shelf_list = []
+        self.workOrder = []
         return
 
 
@@ -75,19 +77,57 @@ class SystemManager(object):
     def positionTalker(self, Pose):
         self.pub_shelf.publish(Pose)
         return
+    
+    def readWorkOrder(self, workOrder):
+        path = 'work_order/' + workOrder
+        f = open(path)
+        data = json.load(f)
+        binsID = [] #bin_a bin_b
+        outputList = []
+
+        ##create list of bin IDs - bin_A ...
+        ids_list =   list ((data["bin_contents"]).keys()  ) 
+        valsID = []
+        shelfID = 1
+        for i in range(len(data["work_order"])):
+            vals = list( data["work_order"][i].values())
+            binsID.append(vals[0])
+            
+            if vals[0] in ids_list:
+                #print(ids_list.index(vals[0]) + 1)
+                self.shelf_list.append(ids_list.index(vals[0]) + 1)
+                shelfID = ids_list.index(vals[0]) + 1
+            valsID.append(vals[1])
+            outputList.append([shelfID, vals[1]])
+
+        # print(outputList.index[0])
+        return outputList
+
 
     def main(self):
         rospy.loginfo("[%s] Configuration OK", self.name)
+
+        self.workOrder = self.readWorkOrder("test_pick_2.json")
+        print(self.workOrder)
+        print(self.shelf_list)
+
         while not rospy.is_shutdown():
             n = len(self.shelf_list)
+            print("N: ", n)
             idx = 0
-            while idx < n:
+            while idx < n and not rospy.is_shutdown():
+
                 if (self.isMoving == False):
+                    
+                    time.sleep(0.1)
                     self.shelfTalker(self.shelf_list[idx])
-                    x=input("Next?")
-                    time.sleep(0.01)
-                else:
+                    # //raw_input("Next?")
+                    # time.sleep(0.01)
                     idx += 1
+                    time.sleep(1)
+                    
+                    print("IDX: ", idx)
+
             user = input("Finished Shelf List. Want to go again?:").strip()
             if (user == "n" or user == "N"):
                 break

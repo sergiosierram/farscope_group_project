@@ -7,8 +7,8 @@ from std_msgs.msg import String
 shelf_corner_x = 171
 shelf_corner_z = 74
 shelf_z_offset = 319
-shelf_x_offset = 274.5
-topCorner = (-195.5,800,860)
+shelf_x_offset = 270
+topCorner = (-485.5,800,735)
 
 isMove = False
 
