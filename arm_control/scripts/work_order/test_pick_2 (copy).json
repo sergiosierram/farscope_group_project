@@ -51,11 +51,11 @@
     "work_order": [
         {
             "bin": "bin_A",
-            "item": "Crayons"
+            "item": "Crackers"
         },
         {
             "bin": "bin_F",
-            "item": "Crackers"
+            "item": "Crayons"
         },
         {
             "bin": "bin_G",

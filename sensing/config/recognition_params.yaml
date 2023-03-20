@@ -8,11 +8,11 @@ roboflow_info:
     version: "3"
 image_file:
     filename: "object.jpg"
-    path: "/home/sergiosierra/catkin_ws/src/farscope_group_project/sensing/scripts/"
-verbose: false
+    path: "/home/farscoperoom/catkin_ws/src/farscope_group_project/sensing/scripts/"
+verbose: true
 delete_file: true
-wait_for_request: true
-rate: 1
+wait_for_request: false
+rate: 10
 labels: 
     Bin: 1
     Crackers: 2

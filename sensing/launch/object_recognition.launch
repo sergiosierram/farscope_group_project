@@ -5,4 +5,8 @@
     <rosparam file="$(find sensing)/config/recognition_params.yaml" command="load" />
   </node>
 
+    
+
+
+
 </launch>

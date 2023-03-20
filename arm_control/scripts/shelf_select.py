@@ -7,7 +7,9 @@ from std_msgs.msg import String
 shelf_corner_x = 171
 shelf_corner_z = 74
 shelf_z_offset = 319
+z_camera_offset = 40
 shelf_x_offset = 270
+shelf_y_offset = 200
 topCorner = (-485.5,800,735)
 
 isMove = False
@@ -26,15 +28,15 @@ def callback_shelf(msg):
         z_pos_offset = shelf_corner_z + (shelf_z_offset * z_offset)
 
         x_pos = x_pos_offset + topCorner[0]
-        z_pos = topCorner[2] - z_pos_offset
+        z_pos = topCorner[2] - z_pos_offset - z_camera_offset
 
         shelf_pose = Pose()
         shelf_pose.position.x = x_pos
-        shelf_pose.position.y = topCorner[1]
+        shelf_pose.position.y = topCorner[1]- shelf_y_offset
         shelf_pose.position.z = z_pos
         shelf_pose.orientation.x = 1.57
         shelf_pose.orientation.y = 0
-        shelf_pose.orientation.z = 0
+        shelf_pose.orientation.z = 3.14
         shelf_pose.orientation.w = 0
 
         rospy.loginfo(shelf_pose)
