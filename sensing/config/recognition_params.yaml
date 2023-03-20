@@ -10,7 +10,7 @@ image_file:
     filename: "object.jpg"
     path: "/home/farscoperoom/catkin_ws/src/farscope_group_project/sensing/scripts/"
 verbose: true
-delete_file: true
+delete_file: false
 wait_for_request: false
 rate: 10
 labels: 
