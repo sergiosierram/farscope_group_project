@@ -51,19 +51,22 @@
     "work_order": [
         {
             "bin": "bin_A",
+            "item": "Straw"
+        },
+        {
+            "bin": "bin_C",
             "item": "Crayons"
         },
         {
             "bin": "bin_F",
-            "item": "Crackers"
+            "item": "Straw"
         },
+        
+
         {
             "bin": "bin_G",
-            "item": "Soap"
-        },
-        {
-            "bin": "bin_L",
-            "item": "Netting"
+            "item": "Crackers"
         }
+ 
     ]
 }

@@ -1,0 +1,16 @@
+<?xml version="1.0"?>
+
+<launch>
+ 
+  <node name="system_manager" pkg="arm_control" type="system_manager.py" output="screen">	
+  </node>
+
+  <node name="positional_controller" pkg="arm_control" type="positional_controller.py" output="screen">	
+  </node>
+
+  <node name="shelf_select" pkg="arm_control" type="shelf_select.py" output="screen">	
+  </node>
+
+  
+
+</launch>

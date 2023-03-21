@@ -78,8 +78,8 @@ class PoseEstimation():
             centre_x = int(centre_z *(bbx-self.intrinsics.ppx)/self.intrinsics.fx)
             centre_y = int(centre_z *(bby-self.intrinsics.ppy)/self.intrinsics.fy)
             print("bbx="+ str(object.x)+" "+"bby="+str(object.y)+" "+"z="+str(centre_z))
-
-            self.objPositions.append({'class':object.class_name, 'xPos':centre_x, 'yPos': centre_y, 'zPos':centre_z})
+            if centre_x != 0 and centre_y != 0 and centre_z != 0 or True:
+                self.objPositions.append({'class':object.class_name, 'xPos':centre_x, 'yPos': centre_y, 'zPos':centre_z})
         self.publishPositions()
 
 

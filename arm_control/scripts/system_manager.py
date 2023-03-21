@@ -61,6 +61,8 @@ class SystemManager(object):
         rospy.Subscriber("robot/isMoving", String, self.callbackMoving)
         rospy.Subscriber("robot/positions", Pose, self.callbackPosition)
         rospy.Subscriber("/object_postitons", ObjectArray, self.callbackObjectPosition)
+        rospy.Subscriber('shelf/isReady', Bool, self.callbackShelfReady)
+        rospy.Subscriber('robot/isReady', Bool, self.callbackRobotReady)
         return
 
     def initPublishers(self):
@@ -71,10 +73,13 @@ class SystemManager(object):
         self.pub_shelf = rospy.Publisher('shelf/selector', String, queue_size = 10)
         self.pub_pose  = rospy.Publisher('robot/positions', Pose, queue_size = 10)
         self.pub_vacuum = rospy.Publisher('/vacuum_power', Bool, queue_size=10)
+        self.pub_ready = rospy.Publisher('systemManager/isReady', Bool, queue_size=10)
         
         return
 
     def initVariables(self):
+        self.robotReady = False
+        self.shelfReady = False
         self.rate = rospy.Rate(self.mux_rate)
         self.isMoving = False
         self.currentPose = Pose()
@@ -87,6 +92,13 @@ class SystemManager(object):
         self.adjustedPos = Object()
         return
 
+    def callbackShelfReady(self, msg):
+        self.shelfReady = msg.data
+        return
+    
+    def callbackRobotReady(self, msg):
+        self.robotReady = msg.data
+        return
 
     def callbackMachineVision(self, msg):
         return
@@ -111,6 +123,7 @@ class SystemManager(object):
 
     def callbackObjectPosition(self, msg):
         self.objectPositions = msg.objects
+        return
 
 
     def shelfTalker(self, shelf_num):
@@ -126,6 +139,7 @@ class SystemManager(object):
         return
     
     def readWorkOrder(self, workOrder):
+        rospy.loginfo("[%s] Reading work order from json file ...", self.name)
         path = '/home/farscoperoom/catkin_ws/src/farscope_group_project/arm_control/scripts/work_order/' + workOrder
         f = open(path)
         data = json.load(f)
@@ -149,6 +163,7 @@ class SystemManager(object):
 
         # print(outputList.index[0])
         return outputList
+    
     def convertMsgToDict(self, msg):
         val_list = msg.split("\n")
         val_dict = []
@@ -177,10 +192,20 @@ class SystemManager(object):
         while self.isMoving == True:
             pass
 
+    def waitForModules(self):
+        if not self.robotReady or not self.shelfReady:
+            rospy.loginfo("[%s] Waiting for controllers and machine vision to be ready...", self.name)
+            time.sleep(1)
+            self.waitForModules()
+        self.pub_ready.publish(True)
+        return
+
     def main(self):
-        rospy.loginfo("[%s] Configuration OK", self.name)
+        self.waitForModules()
+        rospy.loginfo("[%s] Controllers are up and running", self.name)
         time.sleep(1)
         self.workOrder = self.readWorkOrder("test_pick_2.json")
+        rospy.loginfo("[%s] Work order from json file ...", self.name)
         print(self.workOrder)
         print(self.shelf_list)
 
@@ -194,12 +219,11 @@ class SystemManager(object):
 
                 if (self.isMoving == False):
                     
-                    
                     self.shelfTalker(self.shelf_list[idx])
-                    time.sleep(0.1)
+                    time.sleep(2.5)
                     
                     while self.isMoving == True:
-                        pass
+                        self.rate.sleep()
 
                     tik = time.time()
                     recognition_attempts = 0
@@ -231,25 +255,26 @@ class SystemManager(object):
                         time.sleep(0.5)
                         #Will Need To Check Grip
                         #Move to Position
+                        print(self.objectPositions)
                         for object in self.objectPositions:
                             if object.class_name ==  self.workOrder[idx][1]:
                                 self.object_pos = object
-                                print("Class name: "+self.object_pos .class_name+"\n"+"x: "+ str(self.object_pos .x)+"\n"+"y: "+ str(self.object_pos .y)+"\n"+"z: "+ str(self.object_pos.z))
+                                print("Class name: "+self.object_pos .class_name+"\n"+"x: "+ str(self.object_pos .x)+"\n"+"y: "+ str(self.object_pos.y)+"\n"+"z: "+ str(self.object_pos.z))
                                 print("Adjusted positions")
-                                self.adjustedPos.x = self.object_pos.x -40
-                                self.adjustedPos.y = 115 - self.object_pos.y
-                                self.adjustedPos.z = self.object_pos.z -110
+                                self.adjustedPos.x = self.object_pos.x - 45
+                                self.adjustedPos.y = 190 - self.object_pos.y
+                                self.adjustedPos.z = self.object_pos.z - 130
                                 print(str(self.adjustedPos.x))
                                 print(str(self.adjustedPos.y))
                                 print(str(self.adjustedPos.z))
                                 time.sleep(0.5)
                                 input("Next/Positions")
-                                self.offsetPosition(self.adjustedPos.x, self.adjustedPos.z-60, self.adjustedPos.y)
+                                self.offsetPosition(self.adjustedPos.x, self.adjustedPos.z-80, self.adjustedPos.y)
                                 self.pub_vacuum.publish(True)
                                 time.sleep(2)
-                                self.offsetPosition(0,60)
+                                self.offsetPosition(0,80)
                                 time.sleep(self.hoover_pause)
-                                self.offsetPosition(100,-self.adjustedPos.z-150, 20)
+                                self.offsetPosition(100,-self.adjustedPos.z-170, 30)
 
 
                         input("Are These There?")
