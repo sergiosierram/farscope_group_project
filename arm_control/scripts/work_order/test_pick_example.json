@@ -50,20 +50,54 @@
     },
     "work_order": [
         {
-            "bin": "bin_A",
-            "item": "Crackers"
+            "bin": "bin_D",
+            "item": "Treats"
+        },
+        {
+            "bin": "bin_G",
+            "item": "YellowToy"
+        },
+
+        {
+            "bin": "bin_I",
+            "item": "MarkTwainBook"
+        },
+        {
+            "bin": "bin_B",
+            "item": "StickyNotes"
+        },
+      
+        {
+            "bin": "bin_C",
+            "item": "Brush"
         },
         {
             "bin": "bin_F",
             "item": "Crayons"
         },
         {
-            "bin": "bin_G",
-            "item": "Soap"
+            "bin": "bin_H",
+            "item": "Cups"
+        },
+        {
+            "bin": "bin_J",
+            "item": "JokesBook"
+        },
+        {
+            "bin": "bin_K",
+            "item": "Netting"
         },
         {
             "bin": "bin_L",
-            "item": "Netting"
+            "item": "Cups"
+        },
+        {
+            "bin": "bin_E",
+            "item": "Crackers"
+        },
+        {
+            "bin": "bin_A",
+            "item": "OutletPlugs"
         }
     ]
 }

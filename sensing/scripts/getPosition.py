@@ -78,9 +78,11 @@ class PoseEstimation():
             centre_x = int(centre_z *(bbx-self.intrinsics.ppx)/self.intrinsics.fx)
             centre_y = int(centre_z *(bby-self.intrinsics.ppy)/self.intrinsics.fy)
             print("bbx="+ str(object.x)+" "+"bby="+str(object.y)+" "+"z="+str(centre_z))
-            if centre_x != 0 and centre_y != 0 and centre_z != 0 or True:
+            
+            if centre_x != 0 and centre_y != 0 and centre_z != 0:
+                
                 self.objPositions.append({'class':object.class_name, 'xPos':centre_x, 'yPos': centre_y, 'zPos':centre_z})
-        self.publishPositions()
+                self.publishPositions()
 
 
     def publishPositions(self):
@@ -102,8 +104,8 @@ class PoseEstimation():
 
 def main():
 
-    depth_image_topic = '/camera/depth/image_rect_raw'
-    #depth_image_topic = '/camera/aligned_depth_to_color/image_raw'
+    #depth_image_topic = '/camera/depth/image_rect_raw'
+    depth_image_topic = '/camera/aligned_depth_to_color/image_raw'
 
     camera_info_topic = '/camera/depth/camera_info'
     bounding_box_info_topic = '/detected_objects'

@@ -84,6 +84,18 @@
         {
             "bin": "bin_I",
             "item": "Straw"
+        },
+        {
+            "bin": "bin_J",
+            "item": "Straw"
+        },
+        {
+            "bin": "bin_K",
+            "item": "Straw"
+        },
+        {
+            "bin": "bin_L",
+            "item": "Straw"
         }
  
     ]

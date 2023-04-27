@@ -66,6 +66,7 @@ class ObjectRecognition():
             rf = roboflow.Roboflow(api_key=api)
             project = rf.workspace(workspace_name).project(project_name)
             self.model = project.version(version).model
+            #self.model = project.version(4).model
         else:
             rospy.logerr("[%s] Failed to load roboflow info", self.name)
             self.model = None
@@ -94,9 +95,11 @@ class ObjectRecognition():
     def predict(self):
         # Create filename to get the image
         file = self.image_file["path"] + self.image_file["filename"]
-        
         # Get prediction from roboflow
         prediction = self.model.predict(file)
+        
+        #uncomment this to show bounding boxes
+        # prediction.plot() 
         
         # Convert predictions to JSON
         prediction.json()
@@ -179,10 +182,20 @@ if __name__ == "__main__":
 
 
 
-#uncomment this to show bounding boxes
-#prediction.plot() 
 
 
 
 
+#  {
+#             "bin": "bin_D",
+#             "item": "Crackers"
+#         },
+#         {
+#             "bin": "bin_B",
+#             "item": "Crayons"
+#         },
+#         {
+#             "bin": "bin_C",
+#             "item": "Soap"
+#         },
 

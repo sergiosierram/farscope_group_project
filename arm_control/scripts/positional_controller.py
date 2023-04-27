@@ -39,11 +39,15 @@ class PositionalController():
         rospy.loginfo("[%s] - x: %s, y: %s, z: %s" , self.name, msg.position.x, msg.position.y, msg.position.z)
         rospy.loginfo("[%s] - theta4_offset: %s, theta5_offset: %s, theta6_offset: %s, isLinear: %s" , self.name, msg.orientation.x, msg.orientation.y, msg.orientation.z, msg.orientation.w)
         rospy.loginfo("[%s] Robot will move now ...", self.name)
-        self.pub.publish("True")
-        is_moved = self.move.moveRobotToPos(msg.position.x,msg.position.y,msg.position.z,msg.orientation.x,msg.orientation.y,msg.orientation.z,msg.orientation.w)
-        rospy.loginfo("[%s] Robot will stop now ...", self.name)
-        self.pub.publish(str( not is_moved))
-        return
+        try:
+            self.pub.publish("True")
+            is_moved = self.move.moveRobotToPos(msg.position.x,msg.position.y,msg.position.z,msg.orientation.x,msg.orientation.y,msg.orientation.z,msg.orientation.w)
+            rospy.loginfo("[%s] Robot will stop now ...", self.name)
+            self.pub.publish(str( not is_moved))
+            return
+        except:
+            self.pub.publish("False")
+
     
     def main(self):
         rospy.loginfo("[%s] Node configuration OK", self.name)

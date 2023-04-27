@@ -25,13 +25,14 @@ class ShelfSelect():
     
     def initVariables(self):
         self.stopPubReady = False
-        self.shelf_corner_x = 171
+        self.shelf_corner_x = 71
         self.shelf_corner_z = 74
         self.shelf_z_offset = 319
         self.z_camera_offset = 40
+
         self.shelf_x_offset = 270
-        self.shelf_y_offset = 200
-        self.topCorner = (-485.5,800,735)
+        self.shelf_y_offset = 590
+        self.topCorner = (-450,1140,735)
         self.rate = rospy.Rate(50)
         return
     
@@ -41,6 +42,7 @@ class ShelfSelect():
     
     def callback_shelf(self, msg):
         rospy.loginfo("[%s] Shelf request is received!", self.name)
+        print(msg)
         inmsg = msg.data
 
         if inmsg.isdigit() and int(inmsg) <= 12 and int(inmsg) > 0:

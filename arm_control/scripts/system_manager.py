@@ -11,9 +11,13 @@
 import rospy, time
 from geometry_msgs.msg import Pose
 import json
-from std_msgs.msg import Bool, String
+from std_msgs.msg import Bool, String, Float32
 from sys import stdin
 from sensing_msgs.msg import ObjectArray, Object
+import atexit
+
+
+
 
 class SystemManager(object):
     def __init__(self, name):
@@ -26,6 +30,13 @@ class SystemManager(object):
         self.initVariables()
         self.init_positions()
         self.main()
+        self.camera_x_offset = 45
+        self.camera_y_offset = 110
+        self.camera_z_offset = 135
+        self.currentPressure = 0
+        self.pressureBaseline = 0
+        self.objectIdentifyTimeout = 5
+        atexit.register(self.writeOutList)
 
     def init_positions(self):
         self.home_pose = Pose()
@@ -63,6 +74,7 @@ class SystemManager(object):
         rospy.Subscriber("/object_postitons", ObjectArray, self.callbackObjectPosition)
         rospy.Subscriber('shelf/isReady', Bool, self.callbackShelfReady)
         rospy.Subscriber('robot/isReady', Bool, self.callbackRobotReady)
+        rospy.Subscriber('/vacuumPressure', Float32, self.callbackPressure)
         return
 
     def initPublishers(self):
@@ -78,6 +90,10 @@ class SystemManager(object):
         return
 
     def initVariables(self):
+        self.notFound = "ITEM NOT FOUND"
+        self.picked = "ITEM SUCCESSFULLY PICKED"
+        self.lost = "ITEM LOST DURING PICK"
+        self.noPick = "COULD NOT PICK ITEM"
         self.robotReady = False
         self.shelfReady = False
         self.rate = rospy.Rate(self.mux_rate)
@@ -85,6 +101,7 @@ class SystemManager(object):
         self.currentPose = Pose()
         self.shelf_list = []
         self.workOrder = []
+        self.outList = {}
         self.max_attempts = 2
         self.hoover_pause = 2
         self.objectPositions = ObjectArray()
@@ -95,6 +112,9 @@ class SystemManager(object):
     def callbackShelfReady(self, msg):
         self.shelfReady = msg.data
         return
+
+    def callbackPressure(self, msg):
+        self.currentPressure = msg.data
     
     def callbackRobotReady(self, msg):
         self.robotReady = msg.data
@@ -180,14 +200,38 @@ class SystemManager(object):
         while self.isMoving == True:
             pass
     
+    def moveToBin(self):
+        self.pub_pose.publish(self.bin_pose)
+        time.sleep(0.1)
+        while self.isMoving == True:
+            if self.currentPressure > (self.pressureBaseline - 20):
+                print("---------------PRESSURE EXCEEDED MAXIMUM--------------------")
+                return False
+        
+        if self.currentPressure < (self.pressureBaseline - 35):
+            return True
+        else:
+            return False
+
+        
+
+    def writeOutList(self):
+        with open('/home/farscoperoom/catkin_ws/src/farscope_group_project/arm_control/scripts/Order_Reports/result.txt', 'w') as fp:
+            for i in range(len(self.workOrder)):
+                fp.write(self.workOrder[i][1])
+                fp.write(": ")
+                fp.write(self.outList[self.workOrder[i][1]])
+                fp.write("\n")
+    
     def offsetPosition(self, x_off = 0, y_off = 0, z_off = 0, orientx = 0, orienty = 0, orientz = 0):
         pose = self.currentPose
-        pose.position.y += x_off
+        pose.position.x += x_off
         pose.position.y += y_off
         pose.position.z += z_off
         pose.orientation.x += orientx
         pose.orientation.y += orienty
         pose.orientation.z += orientz
+        print("newpos --- ",pose)
         self.posePublisher(pose)
         while self.isMoving == True:
             pass
@@ -204,10 +248,33 @@ class SystemManager(object):
         self.waitForModules()
         rospy.loginfo("[%s] Controllers are up and running", self.name)
         time.sleep(1)
-        self.workOrder = self.readWorkOrder("test_pick_2.json")
+        self.workOrder = self.readWorkOrder("test_pick_example.json")
+        #self.workOrder = self.readWorkOrder("test_pick_Scan_horizontal.json")
         rospy.loginfo("[%s] Work order from json file ...", self.name)
         print(self.workOrder)
         print(self.shelf_list)
+
+        for i in range(len(self.workOrder)):
+            self.outList[self.workOrder[i][1]] = "Not Picked"
+
+        rospy.loginfo("------OUTLIST-------")
+        print(self.outList)
+
+        
+        self.pub_vacuum.publish(True)
+        time.sleep(2)
+        rospy.loginfo("Calculating Pressure Baseline")
+        baseline = 0
+        for i in range(10):
+            baseline += self.currentPressure
+            time.sleep(0.2)
+        
+        self.pub_vacuum.publish(False)
+        time.sleep(0.2)
+        
+        self.pressureBaseline = baseline/10
+        rospy.loginfo("Pressure Baseline Measured at [%d]", self.pressureBaseline)
+
 
         self.posePublisher(self.home_pose)
         input("Ready to Start")
@@ -221,9 +288,13 @@ class SystemManager(object):
                     
                     self.shelfTalker(self.shelf_list[idx])
                     time.sleep(2.5)
-                    
                     while self.isMoving == True:
                         self.rate.sleep()
+
+                    self.offsetPosition(0,50,0)
+                    time.sleep(2)
+                    
+                    
 
                     tik = time.time()
                     recognition_attempts = 0
@@ -246,50 +317,123 @@ class SystemManager(object):
                         
                         recognition_attempts += 1        
                     
+                    self.shelfTalker(self.shelf_list[idx])
+
                     tok = time.time()
                     if(is_correct_object == True):
                         print("Object Found \nAttempting Pick")
                         time.sleep(0.2)
+
                         # if recognition_attempts < 2:
                         #     self.offsetPosition(0,100,100,0,0,0)
-                        time.sleep(0.5)
                         #Will Need To Check Grip
                         #Move to Position
                         print(self.objectPositions)
-                        for object in self.objectPositions:
-                            if object.class_name ==  self.workOrder[idx][1]:
-                                self.object_pos = object
-                                print("Class name: "+self.object_pos .class_name+"\n"+"x: "+ str(self.object_pos .x)+"\n"+"y: "+ str(self.object_pos.y)+"\n"+"z: "+ str(self.object_pos.z))
-                                print("Adjusted positions")
-                                self.adjustedPos.x = self.object_pos.x - 45
-                                self.adjustedPos.y = 190 - self.object_pos.y
-                                self.adjustedPos.z = self.object_pos.z - 130
-                                print(str(self.adjustedPos.x))
-                                print(str(self.adjustedPos.y))
-                                print(str(self.adjustedPos.z))
-                                time.sleep(0.5)
-                                input("Next/Positions")
-                                self.offsetPosition(self.adjustedPos.x, self.adjustedPos.z-80, self.adjustedPos.y)
-                                self.pub_vacuum.publish(True)
-                                time.sleep(2)
-                                self.offsetPosition(0,80)
-                                time.sleep(self.hoover_pause)
-                                self.offsetPosition(100,-self.adjustedPos.z-170, 30)
+                        
+                        isCorrectObject = False
+                        pickingattempts = 0
+                        object_tik = time.time()
+                        while isCorrectObject == False and (time.time() - object_tik) < 5 and (pickingattempts < 3): #ADD TIMEOUT OF X SECONDS
+                            for object in self.objectPositions:
+                                if object.class_name == self.workOrder[idx][1]: 
+                                    self.object_pos = object
+                                    print("Class name: "+self.object_pos .class_name+"\n"+"x: "+ str(self.object_pos .x)+"\n"+"y: "+ str(self.object_pos.y)+"\n"+"z: "+ str(self.object_pos.z))
+                                    print("Adjusted positions")
+                                    self.adjustedPos.x = self.object_pos.x #- 60
+                                    self.adjustedPos.y = 125 - self.object_pos.y
+                                    self.adjustedPos.z = self.object_pos.z - 190
 
+                                    if self.adjustedPos.y < 75:
+                                        self.adjustedPos.y = 75
+                                    
+                                    if self.adjustedPos.z < 180:
+                                        if self.adjustedPos.y > 110:
+                                            self.adjustedPos.y = 110
 
-                        input("Are These There?")
+                                    else:
+                                        if self.adjustedPos.y > 90:
+                                            self.adjustedPos.y = 90
 
+                                    if self.adjustedPos.x < -100:
+                                        self.adjustedPos.x = -100
+                                    
+                                    if self.adjustedPos.x > 55:
+                                        self.adjustedPos.x = 55
 
-                        self.posePublisher(self.bin_pose)
-                        time.sleep(1)
-                        self.pub_vacuum.publish(False)
-                        time.sleep(self.hoover_pause)
+                                    if self.adjustedPos.z > 450:
+                                        self.adjustedPos.z = 450
+
+                                    
+                                    print(str(self.adjustedPos.x))
+                                    print(str(self.adjustedPos.y))
+                                    print(str(self.adjustedPos.z))
+
+                                    time.sleep(0.5)
+                                    input("Next/Positions")                                        
+                                    self.offsetPosition(0, 100, 0)#Move Forward a little
+                                    self.pub_vacuum.publish(True)
+                                    time.sleep(3)
+                                    if self.currentPressure > (self.pressureBaseline-30):
+                                        self.offsetPosition(self.adjustedPos.x, 0, self.adjustedPos.y) #Move up before moving in
+                                        time.sleep(0.5)
+                                        
+                                        time.sleep(2)
+                                        self.offsetPosition(0, self.adjustedPos.z, 0)
+                                        time.sleep(0.5)
+                                        if self.currentPressure > (self.pressureBaseline-35):
+                                            self.offsetPosition(0,35)
+                                        time.sleep(self.hoover_pause)
+                                    
+
+                                    if self.currentPressure < (self.pressureBaseline-30):
+                                        isCorrectObject = True
+                                        self.offsetPosition(0,-self.adjustedPos.z-20, 10)
+                                        self.offsetPosition(0,-170, 10)
+                                        self.posePublisher(self.home_pose)
+                                        if self.moveToBin() == True:
+                                            self.outList[self.workOrder[idx][1]] = self.picked
+                                        else:
+                                            self.outList[self.workOrder[idx][1]] = self.lost
+                                        
+                                        self.pub_vacuum.publish(False)
+                                        while self.currentPressure < 900:
+                                            pass
+                                        time.sleep(4)
+                                    else:
+                                        #Move back
+                                        pickingattempts += 1
+                                        self.pub_vacuum.publish(False)
+                                        while self.currentPressure < 900:
+                                            pass
+                                        time.sleep(2)
+                                        self.offsetPosition(-self.adjustedPos.x, -self.adjustedPos.z-120)
+                                        self.shelfTalker(self.shelf_list[idx])
+                                        object_tik = time.time()
+                        
+                        
+                        print("Picked Attempts =", pickingattempts)
+                        print("correct Objects =", isCorrectObject)
+
+                        if pickingattempts == 3 and isCorrectObject == False:
+                            if object.class_name == self.workOrder[idx][1]:
+                                self.outList[self.workOrder[idx][1]] = self.noPick
+                                print("-------------NOPICK-----------------")
+                                
+                        elif isCorrectObject == False:
+                            self.outList[self.workOrder[idx][1]] = self.notFound
+                            print("-------------NOT FOUND-----------------")
+
+     
+
+                        # time.sleep(self.hoover_pause)
 
                     else:
                         print("object_not_found")
+                        self.outList[self.workOrder[idx][1]] = self.notFound
+
                     
                     print(tok-tik)
-                    input("Next")
+                    # input("Next")
                     
                         
                     

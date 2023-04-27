@@ -54,35 +54,47 @@
             "item": "Straw"
         },
         {
-            "bin": "bin_B",
-            "item": "Straw"
-        },
-        {
-            "bin": "bin_C",
-            "item": "Crayons"
-        },
-        {
             "bin": "bin_D",
             "item": "Straw"
         },
         {
-            "bin": "bin_E",
+            "bin": "bin_G",
             "item": "Crayons"
+        },
+        {
+            "bin": "bin_J",
+            "item": "Straw"
+        },
+        {
+            "bin": "bin_B",
+            "item": "Crayons"
+        },
+        {
+            "bin": "bin_E",
+            "item": "Straw"
+        },
+        {
+            "bin": "bin_H",
+            "item": "Crackers"
+        },
+        {
+            "bin": "bin_K",
+            "item": "Straw"
+        },
+        {
+            "bin": "bin_C",
+            "item": "Straw"
         },
         {
             "bin": "bin_F",
             "item": "Straw"
         },
         {
-            "bin": "bin_G",
-            "item": "Crackers"
-        },
-        {
-            "bin": "bin_H",
+            "bin": "bin_I",
             "item": "Straw"
         },
         {
-            "bin": "bin_I",
+            "bin": "bin_L",
             "item": "Straw"
         }
  

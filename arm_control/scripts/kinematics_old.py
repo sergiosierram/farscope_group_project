@@ -36,44 +36,23 @@ class ur10_Kin:
     self.prevX = x
     self.prevY = y
     self.prevZ = z
+    alpha1 = math.atan2(y, x)
     end_effect_horizontal_offset = self.end_effector_width * math.cos(theta5_offset) #d3
     end_effect_vertical_offset = self.end_effector_width * math.sin(theta5_offset) #d4
     d2 = self.end_effector_offset + end_effect_horizontal_offset
 
     r1 = self.hypotenuse(x,y)
     r2 = math.sqrt((r1*r1)-(d2*d2))
-    alpha1 = math.atan2(x,y)
+    alpha1 = math.atan2(y, x)
 
-    
+    theta5 = -((math.pi/2 - (alpha1))- math.atan2(d2,r2))
+    th5_off_vert = -116*math.tan(theta5)
 
     alpha2 = math.asin(d2/r1)
-
-    print("--------D2----------")
-    print(d2)
-    print("--------R1----------")
-    print(r1)
-
-
-    if x < 0:
-      theta1 = (-(alpha1)) + alpha2
-    else:
-      theta1 = (-(alpha1)) + alpha2
-
-    theta5 = theta1
-    th5_off_vert = 0 #-116*math.tan(theta5)
-    
-    print("--------THETA----------")
-    print(theta1)
-    print("--------ALPHA1----------")
-    print(alpha1)
-    print("-------ALPHA2----------")
-    print(alpha2)
-    # print((theta5/math.pi)*180)
-
+    theta1 = -(math.pi/2 - (alpha1 + alpha2))
 
     end_eff_offset_hypot = self.hypotenuse(self.end_effector_length,end_effect_vertical_offset) #a1
     beta1 = theta4_offset - math.atan2(end_effect_vertical_offset, self.end_effector_length)
-
 
     z_off = end_eff_offset_hypot*math.sin(beta1)
     xy_off = end_eff_offset_hypot*math.cos(beta1)
@@ -110,4 +89,5 @@ class ur10_Kin:
 
     
     return theta1, theta2, theta3, theta4, theta5
+
 
