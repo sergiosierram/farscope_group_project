@@ -5,7 +5,7 @@ roboflow_info:
     api_key: "jdOkPzYHJ2d3fxl3sO2H"
     workspace: "manny"
     project: "amazon_picking_challenge"
-    version: "3"
+    version: "4"
 image_file:
     filename: "object.jpg"
     path: "/home/farscoperoom/catkin_ws/src/farscope_group_project/sensing/scripts/"
