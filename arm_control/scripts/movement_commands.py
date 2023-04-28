@@ -25,6 +25,12 @@ class ur10_move:
         self.display_trajectory_publisher = rospy.Publisher('/move_group/display_planned_path',
                                                     moveit_msgs.msg.DisplayTrajectory,
                                                     queue_size=20)
+        # joint_names = self.robot.get_joint_names()
+        # joint_limits = self.robot.get_joint_limits(joint_names[0])
+        # max_velocity_scaling_factor = 0.6  # Change this value to set the desired scaling factor
+        # for joint_name in joint_names:
+        #     self.robot.set_joint_velocity_scaling_factor(joint_name, max_velocity_scaling_factor)
+
         
         self.theta5 = (0/180)*math.pi
         self.theta4_offset = (90/180)*math.pi

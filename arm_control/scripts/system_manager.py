@@ -303,7 +303,8 @@ class SystemManager(object):
                     while recognition_attempts < self.max_attempts and is_correct_object == False and not rospy.is_shutdown():
                         timeout = time.time() + 3
                         if recognition_attempts == 1:
-                            self.offsetPosition(0,100,130,0,0,-0.3)
+                            self.offsetPosition(0,50,50,0,0,-0.1)
+                            time.sleep(1)
                         while time.time() < timeout and is_correct_object == False and not rospy.is_shutdown(): 
                             for i in range(len(self.objectmsg.objects)):
                                 if not self.objectmsg.objects == None:
@@ -313,10 +314,10 @@ class SystemManager(object):
 
                                     if val_dict["class_name"].strip() == self.workOrder[idx][1]:
                                         is_correct_object = True
-                            time.sleep(0.01)
+                            time.sleep(0.1)
                         
                         recognition_attempts += 1        
-                    
+                    time.sleep(1)
                     self.shelfTalker(self.shelf_list[idx])
 
                     tok = time.time()
@@ -339,7 +340,7 @@ class SystemManager(object):
                                     self.object_pos = object
                                     print("Class name: "+self.object_pos .class_name+"\n"+"x: "+ str(self.object_pos .x)+"\n"+"y: "+ str(self.object_pos.y)+"\n"+"z: "+ str(self.object_pos.z))
                                     print("Adjusted positions")
-                                    self.adjustedPos.x = self.object_pos.x #- 60
+                                    self.adjustedPos.x = self.object_pos.x + 10 #- 60
                                     self.adjustedPos.y = 125 - self.object_pos.y
                                     self.adjustedPos.z = self.object_pos.z - 190
 
@@ -347,8 +348,8 @@ class SystemManager(object):
                                         self.adjustedPos.y = 75
                                     
                                     if self.adjustedPos.z < 180:
-                                        if self.adjustedPos.y > 110:
-                                            self.adjustedPos.y = 110
+                                        if self.adjustedPos.y > 105:
+                                            self.adjustedPos.y = 105
 
                                     else:
                                         if self.adjustedPos.y > 90:
@@ -360,8 +361,8 @@ class SystemManager(object):
                                     if self.adjustedPos.x > 55:
                                         self.adjustedPos.x = 55
 
-                                    if self.adjustedPos.z > 450:
-                                        self.adjustedPos.z = 450
+                                    if self.adjustedPos.z > 320:
+                                        self.adjustedPos.z = 320
 
                                     
                                     print(str(self.adjustedPos.x))
@@ -369,7 +370,7 @@ class SystemManager(object):
                                     print(str(self.adjustedPos.z))
 
                                     time.sleep(0.5)
-                                    input("Next/Positions")                                        
+                                    # input("Next/Positions")                                        
                                     self.offsetPosition(0, 100, 0)#Move Forward a little
                                     self.pub_vacuum.publish(True)
                                     time.sleep(3)
@@ -387,8 +388,8 @@ class SystemManager(object):
 
                                     if self.currentPressure < (self.pressureBaseline-30):
                                         isCorrectObject = True
-                                        self.offsetPosition(0,-self.adjustedPos.z-20, 10)
-                                        self.offsetPosition(0,-170, 10)
+                                        self.offsetPosition(0,-20-(2*(self.adjustedPos.z/3)), 10)
+                                        self.offsetPosition(0,-(170+(self.adjustedPos.z/3)), 0)
                                         self.posePublisher(self.home_pose)
                                         if self.moveToBin() == True:
                                             self.outList[self.workOrder[idx][1]] = self.picked
@@ -405,7 +406,7 @@ class SystemManager(object):
                                         self.pub_vacuum.publish(False)
                                         while self.currentPressure < 900:
                                             pass
-                                        time.sleep(2)
+                                        time.sleep(4)
                                         self.offsetPosition(-self.adjustedPos.x, -self.adjustedPos.z-120)
                                         self.shelfTalker(self.shelf_list[idx])
                                         object_tik = time.time()
@@ -466,3 +467,57 @@ if __name__ == '__main__':
     except rospy.ROSInterruptException:
         pass
         print('Exiting Admitance Controller')
+
+
+
+    # {
+    #         "bin": "bin_D",
+    #         "item": "Treats"
+    #     }
+# ,
+#         {
+#             "bin": "bin_G",
+#             "item": "YellowToy"
+#         },
+
+#         {
+#             "bin": "bin_I",
+#             "item": "MarkTwainBook"
+#         },
+#         {
+#             "bin": "bin_B",
+#             "item": "StickyNotes"
+#         },
+      
+#         {
+#             "bin": "bin_C",
+#             "item": "Soap"
+#         },
+#         {
+#             "bin": "bin_F",
+#             "item": "Crayons"
+#         },
+#         {
+#             "bin": "bin_H",
+#             "item": "Cups"
+#         },
+#         {
+#             "bin": "bin_J",
+#             "item": "JokesBook"
+#         },
+#         {
+#             "bin": "bin_K",
+#             "item": "Netting"
+#         },
+#         {
+#             "bin": "bin_L",
+#             "item": "Cups"
+#         },
+#         {
+#             "bin": "bin_E",
+#             "item": "Crackers"
+#         },
+#         {
+#             "bin": "bin_A",
+#             "item": "OutletPlugs"
+#         }
